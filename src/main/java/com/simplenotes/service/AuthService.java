@@ -25,22 +25,21 @@ public class AuthService {
 
     public String register(String email, String password) {
         try {
-            logger.debug("Attempting to register user with email: {}", email);
+            logger.debug("Starting registration process for email: {}", email);
             
-            if (userRepository.findByEmail(email).isPresent()) {
-                logger.debug("Email already exists: {}", email);
-                throw new RuntimeException("Email already registered");
-            }
-
             User user = new User();
             user.setEmail(email);
             user.setPassword(passwordEncoder.encode(password));
-            userRepository.save(user);
             
-            logger.debug("User registered successfully: {}", email);
-            return jwtService.generateToken(user);
+            User savedUser = userRepository.save(user);
+            logger.debug("User saved with ID: {}", savedUser.getId());
+            
+            String token = jwtService.generateToken(savedUser);
+            logger.debug("JWT token generated for user");
+            
+            return token;
         } catch (Exception e) {
-            logger.error("Error during registration: ", e);
+            logger.error("Registration failed: ", e);
             throw e;
         }
     }
