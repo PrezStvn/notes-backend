@@ -1,6 +1,9 @@
 package com.simplenotes.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.simplenotes.model.Note;
+import com.simplenotes.dto.NoteDTO;
 import com.simplenotes.repository.NoteRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +19,7 @@ public class NoteService {
     private static final Logger logger = LoggerFactory.getLogger(NoteService.class);
     
     private final NoteRepository noteRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public NoteService(NoteRepository noteRepository) {
         this.noteRepository = noteRepository;
@@ -48,11 +52,16 @@ public class NoteService {
     }
 
     @Transactional
-    public Note updateNote(UUID id, Note noteDetails) {
+    public Note updateNote(UUID id, NoteDTO noteDTO) {
         logger.debug("Updating note with ID: {}", id);
         Note note = getNoteById(id);
-        note.setTitle(noteDetails.getTitle());
-        note.setContent(noteDetails.getContent());
+        note.setTitle(noteDTO.getTitle());
+        note.setContent(noteDTO.getContent());
+        try {
+            note.setIndentLevels(objectMapper.writeValueAsString(noteDTO.getIndentLevels()));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error processing indent levels", e);
+        }
         note.setUpdatedAt(LocalDateTime.now());
         Note updatedNote = noteRepository.save(note);
         logger.debug("Note updated successfully");
@@ -65,5 +74,31 @@ public class NoteService {
         Note note = getNoteById(id);
         noteRepository.delete(note);
         logger.debug("Note deleted successfully");
+    }
+
+    public Note createNote(NoteDTO noteDTO) {
+        Note note = new Note();
+        note.setTitle(noteDTO.getTitle());
+        note.setContent(noteDTO.getContent());
+        try {
+            note.setIndentLevels(objectMapper.writeValueAsString(noteDTO.getIndentLevels()));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error processing indent levels", e);
+        }
+        // ... rest of creation logic
+        return note;
+    }
+    
+    public NoteDTO convertToDTO(Note note) {
+        NoteDTO dto = new NoteDTO();
+        dto.setTitle(note.getTitle());
+        dto.setContent(note.getContent());
+        try {
+            dto.setIndentLevels(objectMapper.readValue(note.getIndentLevels(), int[].class));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error reading indent levels", e);
+        }
+        // ... rest of conversion logic
+        return dto;
     }
 }

@@ -2,9 +2,8 @@ package com.simplenotes.controller;
 
 import com.simplenotes.model.Note;
 import com.simplenotes.service.NoteService;
-import com.simplenotes.dto.NoteResponse;
-import com.simplenotes.dto.NoteCreateRequest;
-import com.simplenotes.dto.NoteUpdateRequest;
+
+import com.simplenotes.dto.NoteDTO;
 import com.simplenotes.mapper.NoteMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,16 +24,16 @@ public class NoteController {
     }
 
     @PostMapping
-    public ResponseEntity<NoteResponse> createNote(@RequestBody NoteCreateRequest request) {
+    public ResponseEntity<NoteDTO> createNote(@RequestBody NoteDTO request) {
         Note note = new Note(request.getTitle(), request.getContent());
         Note savedNote = noteService.createNote(note);
-        return ResponseEntity.ok(noteMapper.toResponse(savedNote));
+        return ResponseEntity.ok(noteMapper.toDTO(savedNote));
     }
 
     @GetMapping
-    public ResponseEntity<List<NoteResponse>> getAllNotes() {
+    public ResponseEntity<List<NoteDTO>> getAllNotes() {
         List<Note> notes = noteService.getAllNotes();
-        return ResponseEntity.ok(noteMapper.toResponseList(notes));
+        return ResponseEntity.ok(noteMapper.toDTOList(notes));
     }
 
     @GetMapping("/{id}")
@@ -44,14 +43,11 @@ public class NoteController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<NoteResponse> updateNote(
+    public ResponseEntity<NoteDTO> updateNote(
             @PathVariable UUID id,
-            @RequestBody NoteUpdateRequest request) {
-        Note note = noteService.getNoteById(id);
-        note.setTitle(request.getTitle());
-        note.setContent(request.getContent());
-        Note updatedNote = noteService.updateNote(id, note);
-        return ResponseEntity.ok(noteMapper.toResponse(updatedNote));
+            @RequestBody NoteDTO noteDTO) {
+        Note updatedNote = noteService.updateNote(id, noteDTO);
+        return ResponseEntity.ok(noteMapper.toDTO(updatedNote));
     }
 
     @DeleteMapping("/{id}")
